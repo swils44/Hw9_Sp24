@@ -498,6 +498,9 @@ class TrussView():
         #a pen for the grid lines
         self.penGridLines = qtg.QPen()
         self.penGridLines.setWidth(1)
+        # a pen for the outline of the RigidLink
+        self.penRigilink = qtg.QPen(qtg.QColor("orange"))
+        self.penRigilink.setWidth(1)
         # I wanted to make the grid lines more subtle, so set alpha=25
         self.penGridLines.setColor(qtg.QColor.fromHsv(197, 144, 228, alpha=25))
         #now make some brushes
@@ -649,7 +652,7 @@ class TrussView():
                     self.drawRigidSurface((node1.position.x + node2.position.x) / 2, node1.position.y,
                                           (node2.position.x - node1.position.x), 10, pen=self.penLink)
 
-                self.drawLinkage(node1.position.x, node1.position.y, node2.position.x, node2.position.y)
+                self.drawLinkage(node1.position.x, node1.position.y, node2.position.x, node2.position.y, pen=self.penRigilink)
 
     def drawNodes(self, truss=None, scene=None):
         #$JES MISSING CODE HERE$
@@ -668,7 +671,7 @@ class TrussView():
              #   self.drawRigidSurface(int(node.position.x), int(node.position.y), 10, 10)
 
             #self.drawACircle(node.position.x, node.position.y, 5, brush=self.brushNode, pen=self.penNode)
-            #self.drawALabel(node.position.x, node.position.y, node.name, pen=self.penNode)
+            self.drawALabel(node.position.x, node.position.y, node.name, pen=self.penNode)
 
         pass
 
