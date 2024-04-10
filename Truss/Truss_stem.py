@@ -183,7 +183,7 @@ class Link():
         """
         Basic definition of a link contains a name and names of node1 and node2
         """
-        self.name=""
+        self.name= name
         self.node1_Name=node1
         self.node2_Name=node2
         self.length=None
@@ -238,6 +238,30 @@ class TrussController():
         """
         #$JES MISSING CODE HERE$
 
+        # Reset the model for new data
+        self.truss = TrussModel()
+        for line in data:
+            # Strip leading/trailing whitespace and ignore comments or blank lines
+            line = line.strip()
+            if line.startswith("#") or not line:
+                continue
+
+            parts = line.split(',')
+            keyword = parts[0].strip().lower()  # Normalize keyword to lowercase for consistent comparison
+            if keyword == 'title':
+                self.truss.title = parts[1].strip().strip("'")
+            elif keyword == 'material':
+                # Assuming a format: Material,uts,ys,E
+                self.truss.material = Material(uts=float(parts[1]), ys=float(parts[2]), modulus=float(parts[3]))
+            elif keyword == 'static_factor':
+                self.truss.material.staticFactor = float(parts[1])
+            elif keyword == 'node':
+                # Assuming a format: node,name,x,y
+                self.addNode(Node(name=parts[1].strip(), position=Position(x=float(parts[2]), y=-float(parts[3]))))
+            elif keyword == 'link':
+                # Assuming a format: link,name,node1,node2
+                self.addLink(Link(name=parts[1].strip(), node1=parts[2].strip(), node2=parts[3].strip()))
+
         self.calcLinkVals()
         self.displayReport()
         self.drawTruss()
@@ -255,14 +279,25 @@ class TrussController():
         for n in self.truss.nodes:
             if n.name == name:
                 return n
-
+    def getLink(self, name):
+        for l in self.truss.links:
+            if l.name == name:
+                return l
     def addLink(self, link):
         self.truss.links.append(link)
 
+    def hasLink(self, name):
+        for l in self.truss.links:
+            if l.name == name:
+                return True
+        return False
     def calcLinkVals(self):
         for l in self.truss.links:
+            name=None
             n1=None
             n2=None
+            if self.hasLink(l.name):
+                name = self.getLink(l.name)
             if self.hasNode(l.node1_Name):
                 n1=self.getNode(l.node1_Name)
             if self.hasNode(l.node2_Name):
@@ -273,9 +308,11 @@ class TrussController():
                 l.angleRad=r.getAngleRad()
 
     def setDisplayWidgets(self, args):
+        (self.te_Report, self.le_LongLinkName, self.le_Node1Name,
+         self.le_Node2Name, self.le_LinkLength, self.gv) = args
         self.view.setDisplayWidgets(args)
 
-    def displayReport(self):
+    def displayReport(self, truss=None):
         self.view.displayReport(truss=self.truss)
 
     def drawTruss(self):
@@ -298,14 +335,14 @@ class TrussView():
         self.penLink = qtg.QPen(qtc.Qt.darkGray)
         self.penLink.setWidth(4)
         #a medium darkBlue pen
-        self.penNode = qtg.QPen(qtc.Qt.darkBlue)
+        self.penNode = qtg.QPen(qtc.Qt.darkMagenta)
         self.penNode.setStyle(qtc.Qt.SolidLine)
         self.penNode.setWidth(1)
         #a pen for the grid lines
         self.penGridLines = qtg.QPen()
         self.penGridLines.setWidth(1)
         # I wanted to make the grid lines more subtle, so set alpha=25
-        self.penGridLines.setColor(qtg.QColor.fromHsv(197, 144, 228, alpha=50))
+        self.penGridLines.setColor(qtg.QColor.fromHsv(197, 144, 228, alpha=25))
         #now make some brushes
         #build a brush for filling with solid red
         self.brushFill = qtg.QBrush(qtc.Qt.darkRed)
@@ -336,38 +373,50 @@ class TrussView():
         longest=None
         for l in truss.links:
             if longest is None or l.length>longest.length:
+                print(l.name)
                 longest=l
+
             st+='{}\t{}\t{}\t{:0.2f}\t{:0.2f}\n'.format(l.name, l.node1_Name, l.node2_Name, l.length, l.angleRad)
         self.te_Report.setText(st)
-        self.le_LongLinkName.setText(longest.name)
-        self.le_LongLinkLength.setText("{:0.2f}".format(longest.length))
-        self.le_LongLinkNode1.setText(longest.node1_Name)
-        self.le_LongLinkNode2.setText(longest.node2_Name)
-    
+        if longest is not None:
+            print(longest.name)
+            self.le_LongLinkName.setText(longest.name)
+            self.le_LongLinkLength.setText("{:0.2f}".format(longest.length))
+            self.le_LongLinkNode1.setText(longest.node1_Name)
+            self.le_LongLinkNode2.setText(longest.node2_Name)
+
     def buildScene(self, truss=None):
-        #Create a QRect() object to help with drawing the background grid.
-        rect=qtc.QRect()
-        rect.setTop(truss.nodes[0].position.y)
-        rect.setLeft(truss.nodes[0].position.x)
-        rect.setHeight(0)
-        rect.setWidth(0)
-        for n in truss.nodes:
-            if n.position.y>rect.top(): rect.setTop(n.position.y)
-            if n.position.y<rect.bottom(): rect.setBottom(n.position.y)
-            if n.position.x>rect.right(): rect.setRight(n.position.x)
-            if n.position.x<rect.left(): rect.setLeft(n.position.x)
-        rect.adjust(-50,50,50,-50)
+        rect = qtc.QRect()
+        if truss.nodes:
+            # Assuming truss.nodes[0].position.x and .y are the initial values you want to set.
+            # Convert float to int for QRect method arguments.
+            initial_y = int(truss.nodes[0].position.y)
+            rect.setTop(initial_y)
+            rect.setBottom(initial_y)
+            for n in truss.nodes:
+                # Again, convert float to int for QRect method arguments.
+                if n.position.y > rect.top():
+                    rect.setTop(int(n.position.y))
+                if n.position.y < rect.bottom():
+                    rect.setBottom(int(n.position.y))
+                if n.position.x > rect.right():
+                    rect.setRight(int(n.position.x))
+                if n.position.x < rect.left():
+                    rect.setLeft(int(n.position.x))
+            rect.adjust(-50, 50, 50, -50)
+
+        # Proceed with the rest of your scene building...
 
         # clear out the old scene first
         self.scene.clear()
 
         # draw a grid
-        self.drawAGrid(DeltaX=10, DeltaY=10, Height=abs(rect.height()), Width=abs(rect.width()), CenterX=rect.center().x(), CenterY=rect.center().y())
+        self.drawAGrid(DeltaX=10, DeltaY=10, Height=abs(rect.height()), Width=abs(rect.width()), CenterX=rect.center().x(), CenterY=rect.center().y(),Pen=self.penGridLines ,Brush=self.brushGrid)
         # draw the truss
         self.drawLinks(truss=truss)
         self.drawNodes(truss=truss)
 
-    def drawAGrid(self, DeltaX=10, DeltaY=10, Height=320, Width=180, CenterX=120, CenterY=60):
+    def drawAGrid(self, DeltaX=10, DeltaY=10, Height=340, Width=202, CenterX=120, CenterY=60, Pen=None, Brush=None, SubGrid=None):
         """
         This makes a grid for reference.  No snapping to grid enabled.
         :param DeltaX: grid spacing in x direction
@@ -381,22 +430,101 @@ class TrussView():
         :return: nothing
         """
         #JES MISSING CODE HERE$
+        height = self.scene.sceneRect().height() if Height is None else Height
+        width = self.scene.sceneRect().width() if Width is None else Width
+        left = self.scene.sceneRect().left() if CenterX is None else (CenterX - width / 2.0)
+        right = self.scene.sceneRect().right() if CenterX is None else (CenterX + width / 2.0)
+        top = self.scene.sceneRect().top() if CenterY is None else (CenterY - height / 2.0)
+        bottom = self.scene.sceneRect().bottom() if CenterY is None else (CenterY + height / 2.0)
+        Dx = DeltaX
+        Dy = DeltaY
+        pen = qtg.QPen() if Pen is None else Pen
+
+        # make the background rectangle first
+        if Brush is not None:
+            rect = self.drawARectangle(left, top, width, height, brush=self.brushGrid)
+            rect.setBrush(Brush)
+            rect.setPen(pen)
+
+        # draw the vertical grid lines
+        x = left
+        while x <= right:
+            lVert = self.drawALine(x, top, x, bottom)
+            lVert.setPen(pen)
+            x += Dx
+        # draw the horizontal grid lines
+        y = top
+        while y <= bottom:
+            lHor = self.drawALine(left, y, right, y)
+            lHor.setPen(pen)
+            y += Dy
         pass
 
+    def drawARectangle(self, leftX, topY, widthX, heightY, pen=None, brush=None):
+
+        rect = qtw.QGraphicsRectItem(leftX, topY, widthX, heightY)
+        if brush is not None:
+            rect.setBrush(brush)
+        if pen is not None:
+            rect.setPen(pen)
+
+        self.scene.addItem(rect)
+        return rect
+    def drawALine(self, stX, stY, enX, enY, pen=None):
+        if pen is None: pen = self.penGridLines
+        line = qtw.QGraphicsLineItem(stX, stY, enX, enY)
+        line.setPen(pen)
+        self.scene.addItem(line)
+        return line
+
     def drawLinks(self, truss=None):
-       #$JES MISSING CODE HERE$
-        pass
+        if truss is None:
+            return
+        for link in truss.links:
+            node1 = truss.getNode(link.node1_Name)
+            node2 = truss.getNode(link.node2_Name)
+            if node1 and node2:
+                line = self.drawALine(node1.position.x, node1.position.y, node2.position.x, node2.position.y,
+                                      self.penLink)
 
     def drawNodes(self, truss=None, scene=None):
         #$JES MISSING CODE HERE$
+        if truss is None:
+            return
+        for node in truss.nodes:
+            self.drawACircle(node.position.x, node.position.y, 5, brush=self.brushNode, pen=self.penNode)
+            self.drawALabel(node.position.x, node.position.y, node.name, pen=self.penNode)
+
         pass
 
     def drawALabel(self, x,y,str='', pen=None, brush=None, tip=None):
         #$JES MISSING CODE HERE$
+        if pen is None:
+            pen = self.penNode  # Default to using the penNode style if no pen is provided
+
+            # Create a text item
+        textItem = self.scene.addText(str, font=qtg.QFont("Arial", 10))
+
+        # Set the position of the text item
+        textItem.setPos(x-25, y-30)
+
+        # Apply the pen and brush if they are provided
+        textItem.setDefaultTextColor(pen.color())  # The color of the pen is used as the text color
+
+        # If a tooltip is provided, set it for the text item
+        if tip:
+            textItem.setToolTip(tip)
         pass
 
     def drawACircle(self, centerX, centerY, Radius, angle=0, brush=None, pen=None, name=None, tooltip=None):
         # $JES MISSING CODE HERE
+        if brush is None:
+            brush = self.brushNode
+        if pen is None:
+            pen = self.penNode
+        ellipse = self.scene.addEllipse(centerX - Radius, centerY - Radius, 2 * Radius, 2 * Radius, pen, brush)
+        if tooltip:
+            ellipse.setToolTip(tooltip)
         pass
 
 
