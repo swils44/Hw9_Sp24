@@ -340,7 +340,7 @@ class Link():
         """
         Basic definition of a link contains a name and names of node1 and node2
         """
-        self.name= name
+        self.name= name #Changed to self.name = name because link names were not showing up in the app.
         self.node1_Name=node1
         self.node2_Name=node2
         self.length=None
@@ -393,7 +393,7 @@ class TrussController():
         Reading Links:
         The links should come after the nodes.  Each link has a name and two node names.  See method addLink
         """
-        #$JES MISSING CODE HERE$
+        #Added code here to create and update the truss model for the new data
 
         # Reset the model for new data
         self.truss = TrussModel()
@@ -419,9 +419,9 @@ class TrussController():
                 # Assuming a format: link,name,node1,node2
                 self.addLink(Link(name=parts[1].strip(), node1=parts[2].strip(), node2=parts[3].strip()))
 
-        self.calcLinkVals()
-        self.displayReport()
-        self.drawTruss()
+        self.calcLinkVals() #Calculates the link values
+        self.displayReport() #Shows the report
+        self.drawTruss() #Draws the truss
 
     def hasNode(self, name):
         for n in self.truss.nodes:
@@ -436,25 +436,14 @@ class TrussController():
         for n in self.truss.nodes:
             if n.name == name:
                 return n
-    def getLink(self, name):
-        for l in self.truss.links:
-            if l.name == name:
-                return l
+
     def addLink(self, link):
         self.truss.links.append(link)
 
-    def hasLink(self, name):
-        for l in self.truss.links:
-            if l.name == name:
-                return True
-        return False
     def calcLinkVals(self):
         for l in self.truss.links:
-            name=None
             n1=None
             n2=None
-            if self.hasLink(l.name):
-                name = self.getLink(l.name)
             if self.hasNode(l.node1_Name):
                 n1=self.getNode(l.node1_Name)
             if self.hasNode(l.node2_Name):
@@ -465,11 +454,9 @@ class TrussController():
                 l.angleRad=r.getAngleRad()
 
     def setDisplayWidgets(self, args):
-        (self.te_Report, self.le_LongLinkName, self.le_Node1Name,
-         self.le_Node2Name, self.le_LinkLength, self.gv) = args
         self.view.setDisplayWidgets(args)
 
-    def displayReport(self, truss=None):
+    def displayReport(self):
         self.view.displayReport(truss=self.truss)
 
     def drawTruss(self):
@@ -492,17 +479,17 @@ class TrussView():
         self.penLink = qtg.QPen(qtc.Qt.darkGray)
         self.penLink.setWidth(4)
         #a medium darkBlue pen
-        self.penNode = qtg.QPen(qtc.Qt.darkMagenta)
+        self.penNode = qtg.QPen(qtc.Qt.darkMagenta) #changed darkBlue to darkMagenta
         self.penNode.setStyle(qtc.Qt.SolidLine)
         self.penNode.setWidth(1)
         #a pen for the grid lines
         self.penGridLines = qtg.QPen()
         self.penGridLines.setWidth(1)
         # a pen for the outline of the RigidLink
-        self.penRigilink = qtg.QPen(qtg.QColor("orange"))
-        self.penRigilink.setWidth(1)
+        self.penRigilink = qtg.QPen(qtg.QColor("orange")) #Selected Orange as the color
+        self.penRigilink.setWidth(1) #Selected a width of 1
         # I wanted to make the grid lines more subtle, so set alpha=25
-        self.penGridLines.setColor(qtg.QColor.fromHsv(197, 144, 228, alpha=25))
+        self.penGridLines.setColor(qtg.QColor.fromHsv(197, 144, 228, alpha=25)) #changed alpha to 25
         #now make some brushes
         #build a brush for filling with solid red
         self.brushFill = qtg.QBrush(qtc.Qt.darkRed)
@@ -533,17 +520,14 @@ class TrussView():
         longest=None
         for l in truss.links:
             if longest is None or l.length>longest.length:
-                print(l.name)
                 longest=l
 
             st+='{}\t{}\t{}\t{:0.2f}\t{:0.2f}\n'.format(l.name, l.node1_Name, l.node2_Name, l.length, l.angleRad)
         self.te_Report.setText(st)
-        if longest is not None:
-            print(longest.name)
-            self.le_LongLinkName.setText(longest.name)
-            self.le_LongLinkLength.setText("{:0.2f}".format(longest.length))
-            self.le_LongLinkNode1.setText(longest.node1_Name)
-            self.le_LongLinkNode2.setText(longest.node2_Name)
+        self.le_LongLinkName.setText(longest.name)
+        self.le_LongLinkLength.setText("{:0.2f}".format(longest.length))
+        self.le_LongLinkNode1.setText(longest.node1_Name)
+        self.le_LongLinkNode2.setText(longest.node2_Name)
 
     def buildScene(self, truss=None):
         rect = qtc.QRect()
@@ -571,12 +555,12 @@ class TrussView():
         self.scene.clear()
 
         # draw a grid
-        self.drawAGrid(DeltaX=10, DeltaY=10, Height=abs(rect.height()), Width=abs(rect.width()), CenterX=rect.center().x(), CenterY=rect.center().y(),Pen=self.penGridLines ,Brush=self.brushGrid)
+        self.drawAGrid(DeltaX=10, DeltaY=10, Height=abs(rect.height()), Width=abs(rect.width()), CenterX=rect.center().x(), CenterY=rect.center().y(),Pen=self.penGridLines ,Brush=self.brushGrid) #Added pen gridlines and brush grid
         # draw the truss
         self.drawLinks(truss=truss)
         self.drawNodes(truss=truss)
 
-    def drawAGrid(self, DeltaX=10, DeltaY=10, Height=340, Width=202, CenterX=120, CenterY=60, Pen=None, Brush=None, SubGrid=None):
+    def drawAGrid(self, DeltaX=10, DeltaY=10, Height=340, Width=202, CenterX=120, CenterY=60, Pen=None, Brush=None, SubGrid=None): #Changed height to 340 and Width to 202. Added Pen=none, brush=none, subgrid=none
         """
         This makes a grid for reference.  No snapping to grid enabled.
         :param DeltaX: grid spacing in x direction
@@ -589,39 +573,64 @@ class TrussView():
         :param Brush: brush for background
         :return: nothing
         """
-        #JES MISSING CODE HERE$
+        # Get the height of the scene, using the provided Height if not None, otherwise use the scene's height
         height = self.scene.sceneRect().height() if Height is None else Height
+
+        # Get the width of the scene, using the provided Width if not None, otherwise use the scene's width
         width = self.scene.sceneRect().width() if Width is None else Width
+
+        # Calculate the left coordinate of the grid based on CenterX and width
         left = self.scene.sceneRect().left() if CenterX is None else (CenterX - width / 2.0)
+
+        # Calculate the right coordinate of the grid based on CenterX and width
         right = self.scene.sceneRect().right() if CenterX is None else (CenterX + width / 2.0)
+
+        # Calculate the top coordinate of the grid based on CenterY and height
         top = self.scene.sceneRect().top() if CenterY is None else (CenterY - height / 2.0)
+
+        # Calculate the bottom coordinate of the grid based on CenterY and height
         bottom = self.scene.sceneRect().bottom() if CenterY is None else (CenterY + height / 2.0)
+
+        # Assign DeltaX and DeltaY to Dx and Dy respectively
         Dx = DeltaX
         Dy = DeltaY
+
+        # Use default pen if Pen is None, otherwise use the provided Pen
         pen = qtg.QPen() if Pen is None else Pen
 
-        # make the background rectangle first
+        # Create the background rectangle if Brush is not None
         if Brush is not None:
+            # Draw a rectangle at the specified coordinates with the provided brush
             rect = self.drawARectangle(left, top, width, height, brush=self.brushGrid)
+            # Set the brush color
             rect.setBrush(Brush)
+            # Set the pen for the rectangle
             rect.setPen(pen)
 
-        # draw the vertical grid lines
+        # Draw vertical grid lines
         x = left
         while x <= right:
+            # Draw a vertical line from top to bottom at the current x-coordinate
             lVert = self.drawALine(x, top, x, bottom)
+            # Set the pen for the vertical line
             lVert.setPen(pen)
+            # Move to the next x-coordinate based on DeltaX
             x += Dx
-        # draw the horizontal grid lines
+
+        # Draw horizontal grid lines
         y = top
         while y <= bottom:
+            # Draw a horizontal line from left to right at the current y-coordinate
             lHor = self.drawALine(left, y, right, y)
+            # Set the pen for the horizontal line
             lHor.setPen(pen)
+            # Move to the next y-coordinate based on DeltaY
             y += Dy
+
+        # Placeholder pass statement to indicate the end of the function
         pass
 
-    def drawARectangle(self, leftX, topY, widthX, heightY, pen=None, brush=None):
-
+    def drawARectangle(self, leftX, topY, widthX, heightY, pen=None, brush=None): #added the rectangle
         rect = qtw.QGraphicsRectItem(leftX, topY, widthX, heightY)
         if brush is not None:
             rect.setBrush(brush)
@@ -630,14 +639,14 @@ class TrussView():
 
         self.scene.addItem(rect)
         return rect
-    def drawALine(self, stX, stY, enX, enY, pen=None):
+    def drawALine(self, stX, stY, enX, enY, pen=None): #added the line
         if pen is None: pen = self.penGridLines
         line = qtw.QGraphicsLineItem(stX, stY, enX, enY)
         line.setPen(pen)
         self.scene.addItem(line)
         return line
 
-    def drawLinks(self, truss=None):
+    def drawLinks(self, truss=None): #added this function. List of links, gets the nodes, checks to see if the nodes exist
         if truss is None:
             return
         for link in truss.links:
@@ -647,12 +656,12 @@ class TrussView():
             if node1 and node2:
                 if link.node1_Name == 'Left' and link.node2_Name == 'C':
                     self.drawRigidSurface((node1.position.x + node2.position.x) / 2, node1.position.y,
-                                          (node2.position.x - node1.position.x), 10, pen=self.penLink)
+                                          (node2.position.x - node1.position.x), 10, pen=self.penLink) #Draws the road
                 elif link.node1_Name == 'C' and link.node2_Name == 'Right':
                     self.drawRigidSurface((node1.position.x + node2.position.x) / 2, node1.position.y,
-                                          (node2.position.x - node1.position.x), 10, pen=self.penLink)
+                                          (node2.position.x - node1.position.x), 10, pen=self.penLink) #Draws the road
 
-                self.drawLinkage(node1.position.x, node1.position.y, node2.position.x, node2.position.y, pen=self.penRigilink)
+                self.drawLinkage(node1.position.x, node1.position.y, node2.position.x, node2.position.y, pen=self.penRigilink) #Draws the members of the truss
 
     def drawNodes(self, truss=None, scene=None):
         #$JES MISSING CODE HERE$
@@ -663,28 +672,29 @@ class TrussView():
                 self.drawPivot(int(node.position.x), int(node.position.y), 10, 20)
             elif node.name == 'Right':
                 self.drawPivot(int(node.position.x), int(node.position.y), 10, 20)
-            #elif node.name == 'B':
-             #   self.drawRigidSurface(int(node.position.x), int(node.position.y), 10, 10)
-            #elif node.name == 'C':
-             #   self.drawRigidSurface(int(node.position.x), int(node.position.y), 10, 10)
-            #elif node.name == 'D':
-             #   self.drawRigidSurface(int(node.position.x), int(node.position.y), 10, 10)
 
-            #self.drawACircle(node.position.x, node.position.y, 5, brush=self.brushNode, pen=self.penNode)
             self.drawALabel(node.position.x, node.position.y, node.name, pen=self.penNode)
 
         pass
 
-    def drawALabel(self, x,y,str='', pen=None, brush=None, tip=None):
-        #$JES MISSING CODE HERE$
+    def drawALabel(self, x,y,str='', pen=None, brush=None, tip=None): #Draws the label.
         if pen is None:
             pen = self.penNode  # Default to using the penNode style if no pen is provided
-
-            # Create a text item
+        # Create a text item
         textItem = self.scene.addText(str, font=qtg.QFont("Arial", 10))
 
         # Set the position of the text item
-        textItem.setPos(x-25, y-30)
+        match str:
+            case "Right":
+                textItem.setPos(x - 25, y + 20)
+            case "Left":
+                textItem.setPos(x - 20, y + 20)
+            case "B":
+                textItem.setPos(x - 10, y - 30)
+            case "C":
+                textItem.setPos(x - 10, y + 5)
+            case "D":
+                textItem.setPos(x - 10, y - 30)
 
         # Apply the pen and brush if they are provided
         textItem.setDefaultTextColor(pen.color())  # The color of the pen is used as the text color
@@ -695,7 +705,7 @@ class TrussView():
         pass
 
     def drawACircle(self, centerX, centerY, Radius, angle=0, brush=None, pen=None, name=None, tooltip=None):
-        # $JES MISSING CODE HERE
+        #Checks to see if the brush exists. If not, creates brush item. Does the same for the pen and ellipse.
         if brush is None:
             brush = self.brushNode
         if pen is None:
@@ -705,7 +715,7 @@ class TrussView():
             ellipse.setToolTip(tooltip)
         pass
 
-    def drawRigidSurface(self, centerX, centerY, Width=10, Height=3, pen=None, brush=None):
+    def drawRigidSurface(self, centerX, centerY, Width=10, Height=3, pen=None, brush=None): #Added from Dr. Smay's demo code
         """
         This should draw a figure that has a rectangle with the top border an solid line and the rectangle filled
         with a hatch pattern
@@ -723,12 +733,12 @@ class TrussView():
 
         self.drawARectangle(left, top, Width, Height, pen=penOutline, brush=brush)
 
-    def drawLinkage(self, stX, stY, enX, enY, radius=10, pen=None):
+    def drawLinkage(self, stX, stY, enX, enY, radius=10, pen=None): #also provided by Dr. Smay in the demo code.
         lin1 = RigidLink(stX, stY, enX, enY, radius, pen=pen, brush=self.brushGrid)
         self.scene.addItem(lin1)
         return lin1
 
-    def drawPivot(self, x, y, ht, wd):
+    def drawPivot(self, x, y, ht, wd): #also provided by Dr Smay in the demo code.
         pivot = RigidPivotPoint(x, y, ht, wd)
         self.scene.addItem(pivot)
         return pivot
