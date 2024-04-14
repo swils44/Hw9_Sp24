@@ -402,22 +402,28 @@ class TrussController():
             line = line.strip()
             if line.startswith("#") or not line:
                 continue
+            # updating this section to use match-case instead of if-else
+            # using map to reduce variables
+            keyword, *data = [part.strip() for part in line.split(',')]
+            keyword = keyword.lower()  # Normalize keyword to lowercase for consistent comparison
 
-            parts = line.split(',')
-            keyword = parts[0].strip().lower()  # Normalize keyword to lowercase for consistent comparison
-            if keyword == 'title':
-                self.truss.title = parts[1].strip().strip("'")
-            elif keyword == 'material':
-                # Assuming a format: Material,uts,ys,E
-                self.truss.material = Material(uts=float(parts[1]), ys=float(parts[2]), modulus=float(parts[3]))
-            elif keyword == 'static_factor':
-                self.truss.material.staticFactor = float(parts[1])
-            elif keyword == 'node':
-                # Assuming a format: node,name,x,y
-                self.addNode(Node(name=parts[1].strip(), position=Position(x=float(parts[2]), y=-float(parts[3]))))
-            elif keyword == 'link':
-                # Assuming a format: link,name,node1,node2
-                self.addLink(Link(name=parts[1].strip(), node1=parts[2].strip(), node2=parts[3].strip()))
+            match keyword:
+                case 'title':
+                    self.truss.title = data[0].strip("'")
+                case 'material':
+                    # Assuming a format: Material,uts,ys,E
+                    uts, ys, modulus = map(float, data)
+                    self.truss.material = Material(uts=uts, ys=ys, modulus=modulus)
+                case 'static_factor':
+                    self.truss.material.staticFactor = float(data[0])
+                case 'node':
+                    # Assuming a format: node,name,x,y
+                    name, x, y = data
+                    self.addNode(Node(name=name, position=Position(x=float(x), y=-float(y))))
+                case 'link':
+                    # Assuming a format: link,name,node1,node2
+                    name, node1, node2 = data
+                    self.addLink(Link(name=name, node1=node1, node2=node2))
 
         self.calcLinkVals() #Calculates the link values
         self.displayReport() #Shows the report
@@ -664,15 +670,15 @@ class TrussView():
                 self.drawLinkage(node1.position.x, node1.position.y, node2.position.x, node2.position.y, pen=self.penRigilink) #Draws the members of the truss
 
     def drawNodes(self, truss=None, scene=None):
-        #$JES MISSING CODE HERE$
-        if truss is None:
+        # improved the if statements to pivot_nodes for easier future use
+        # " for node in pivot_nodes:" checks to see if the node names is in the set
+        if not truss:
             return
-        for node in truss.nodes:
-            if node.name == 'Left':
-                self.drawPivot(int(node.position.x), int(node.position.y), 10, 20)
-            elif node.name == 'Right':
-                self.drawPivot(int(node.position.x), int(node.position.y), 10, 20)
 
+        pivot_nodes = {'Left', 'Right'}
+        for node in truss.nodes:
+            if node.name in pivot_nodes:
+                self.drawPivot(int(node.position.x), int(node.position.y), 10, 20)
             self.drawALabel(node.position.x, node.position.y, node.name, pen=self.penNode)
 
         pass

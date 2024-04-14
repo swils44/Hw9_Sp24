@@ -1,5 +1,5 @@
 
-# Examle TRUSS - for MAE 3403 Spring 2018 - Homework 9
+# Example TRUSS - for MAE 3403 Spring 2018 - Homework 9
 # https://www.mathalino.com/reviewer/engineering-mechanics/problem-407-warren-truss-method-joints
 
 # Lines starting with a # character are comments to be ignored
